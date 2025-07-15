@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Attendance Log - All Employees</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body class="bg-light">
+
+  <nav class="navbar navbar-dark bg-dark mb-4">
+    <div class="container-fluid">
+      <a href="/" class="navbar-brand">FaceTrack Attendance</a>
+      <span class="navbar-text text-white">All Employees Attendance</span>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h2 class="mb-4">Attendance Log - All Employees</h2>
+    {% if records %}
+      <table class="table table-striped table-bordered">
+        <thead class="table-dark">
+          <tr>
+            <th>Employee Name</th>
+            <th>Date</th>
+            <th>Check-in Time</th>
+            <th>Check-out Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for attendance, employee in records %}
+          <tr>
+            <td>{{ employee.name }}</td>
+            <td>{{ attendance.date }}</td>
+            <td>{{ attendance.check_in_time }}</td>
+            <td>{{ attendance.check_out_time or '-' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>No attendance records found.</p>
+    {% endif %}
+
+    <div class="d-flex justify-content-between mb-4">
+  <a href="/" class="btn btn-secondary">← Back to Home</a>
+  <a href="/export" class="btn btn-outline-primary">⬇️ Export to CSV</a>
+</div>
+
+
+  </div>
+
+</body>
+</html>

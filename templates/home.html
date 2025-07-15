@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>FaceTrack Attendance - Home</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    .main-container {
+      max-width: 900px;
+      margin: auto;
+      padding-top: 30px;
+    }
+    .card-icon {
+      font-size: 2.5rem;
+    }
+    #clock {
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+
+  
+  .animated-placeholder {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+
+  .pulse-icon {
+    font-size: 2.5rem;
+    animation: pulse 1.5s infinite;
+  }
+
+  @keyframes pulse {
+    0% { transform: scale(1); opacity: 0.6; }
+    50% { transform: scale(1.2); opacity: 1; }
+    100% { transform: scale(1); opacity: 0.6; }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  video#video {
+    width: 100%;
+    max-width: 320px;
+    border-radius: 8px;
+    position: absolute;
+  }
+
+  canvas#canvas {
+    display: none;
+  }
+
+  </style>
+</head>
+<body class="bg-light">
+
+  <nav class="navbar navbar-dark bg-dark mb-4">
+    <div class="container-fluid">
+      <span class="navbar-brand mb-0 h4">FaceTrack Attendance System</span>
+    </div>
+  </nav>
+
+  <div class="container main-container">
+
+    <div class="mb-4 text-center">
+      <h3>Welcome to FaceTrack!</h3>
+      <p id="clock" class="text-secondary"></p>
+    </div>
+
+
+    
+    <div class="mb-5 text-center">
+      <h5>Today's Attendance Count: {{ today_count }}</h5>
+    </div>
+
+    
+    <div class="row g-4 mb-5">
+  
+  <div class="col-md-6">
+    
+    <div class="card text-center shadow-sm mb-4">
+      <div class="card-body">
+        <div class="card-icon mb-3">👤</div>
+        <h5 class="card-title">Register</h5>
+        <p class="card-text">New employees can register their details and face here.</p>
+        <a href="/register" class="btn btn-primary btn-sm">Register</a>
+      </div>
+    </div>
+
+    
+    <div class="card text-center shadow-sm">
+      <div class="card-body">
+        <div class="card-icon mb-3">📊</div>
+        <h5 class="card-title">Attendance Log</h5>
+        <p class="card-text">View attendance history and timings.</p>
+        <a href="/attendance" class="btn btn-info btn-sm">View Log</a>
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="col-md-6">
+    <div class="card text-center shadow-sm p-3 h-93">
+      <h5 class="card-title">Mark Your Attendance</h5>
+      <p class="text-muted"> look at the camera</p>
+
+      
+      <div id="cameraWrapper" class="d-flex justify-content-center align-items-center" style="height: 280px; background-color: #f8f9fa; border-radius: 8px; position: relative;">
+  
+
+  
+  <video id="video" autoplay playsinline ></video>
+  <canvas id="canvas"></canvas>
+</div>
+
+      
+      <div id="messageBox" class="mt-3"></div>
+      <div id="loadingSpinner" class="mt-3" style="display: none;">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Processing...</span>
+        </div>
+        <div class="text-muted mt-2">Processing attendance...</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+  <script>
+    function updateClock() {
+      const clockEl = document.getElementById('clock');
+      clockEl.textContent = new Date().toLocaleString();
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+  </script>
+  <script>
+  const video = document.getElementById('video');
+  const canvas = document.getElementById('canvas');
+  const messageBox = document.getElementById('messageBox');
+  const loadingSpinner = document.getElementById("loadingSpinner");
+
+  let stream = null;
+
+  
+  window.addEventListener('DOMContentLoaded', () => {
+    navigator.mediaDevices.getUserMedia({ video: true })
+  .then(s => {
+    stream = s;
+    video.srcObject = stream;
+    video.onloadedmetadata = () => {
+        video.play();
+        startAutoCapture();  
+      };
+    })
+  .catch(err => {
+    messageBox.innerHTML = `<div class='alert alert-danger'>Unable to access camera: ${err.message}</div>`;
+  });
+
+    
+    startAutoCapture();
+  });
+
+  function captureAndSend() {
+    if (video.readyState !== 4) {
+    console.warn("Video not ready for capture.");
+    return;
+  }
+    const context = canvas.getContext('2d');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+     if (canvas.width === 0 || canvas.height === 0) {
+        console.warn("Invalid canvas dimensions. Skipping capture.");
+        return;
+     }
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const base64Image = canvas.toDataURL('image/jpeg');
+
+    if (!base64Image || base64Image.length < 100) {
+        console.warn("Captured image is empty or too small.");
+        return;
+      }
+
+    loadingSpinner.style.display = "block";
+    messageBox.innerHTML = "";
+
+    return fetch('/mark-attendance', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ face_image: base64Image })
+    })
+    .then(res => res.json())
+    .then(data => {
+      loadingSpinner.style.display = "none";
+      if (data.message) {
+        if (Array.isArray(data.message)) {
+          messageBox.innerHTML = data.message.map(msg =>
+            `<div class="alert alert-success">${msg}</div>`
+          ).join('');
+        } else {
+          messageBox.innerHTML = `<div class="alert alert-success">${data.message}</div>`;
+        }
+      } else if (data.error) {
+        messageBox.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+      }
+    })
+    .catch(err => {
+      loadingSpinner.style.display = "none";
+      messageBox.innerHTML = `<div class='alert alert-danger'>Error: ${err.message}</div>`;
+    });
+  }
+
+  function startAutoCapture() {
+   
+    captureAndSend();
+    setInterval(() => {
+      captureAndSend();
+    }, 60000);
+  }
+</script>
+
+
+</body>
+</html>
