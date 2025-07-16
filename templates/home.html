@@ -163,23 +163,27 @@
 
   function captureAndSend() {
     if (video.readyState !== 4) {
-    console.warn("Video not ready for capture.");
-    return;
-  }
+      console.warn("Video not ready for capture.");
+      return;
+    }
+
     const context = canvas.getContext('2d');
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-     if (canvas.width === 0 || canvas.height === 0) {
-        console.warn("Invalid canvas dimensions. Skipping capture.");
-        return;
-     }
+
+    if (canvas.width === 0 || canvas.height === 0) {
+      console.warn("Invalid canvas dimensions. Skipping capture.");
+      return;
+    }
+
+    
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
     const base64Image = canvas.toDataURL('image/jpeg');
 
     if (!base64Image || base64Image.length < 100) {
-        console.warn("Captured image is empty or too small.");
-        return;
-      }
+      console.warn("Captured image is empty or too small.");
+      return;
+    }
 
     loadingSpinner.style.display = "block";
     messageBox.innerHTML = "";
@@ -192,6 +196,25 @@
     .then(res => res.json())
     .then(data => {
       loadingSpinner.style.display = "none";
+
+      
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      
+      if (data.boxes && Array.isArray(data.boxes)) {
+        data.boxes.forEach(box => {
+          const { top, right, bottom, left } = box;
+          const boxWidth = right - left;
+          const boxHeight = bottom - top;
+
+         
+          context.strokeStyle = 'lime';
+          context.lineWidth = 2;
+          context.strokeRect(left, top, boxWidth, boxHeight);
+        });
+      }
+
+      
       if (data.message) {
         if (Array.isArray(data.message)) {
           messageBox.innerHTML = data.message.map(msg =>
@@ -215,7 +238,7 @@
     captureAndSend();
     setInterval(() => {
       captureAndSend();
-    }, 60000);
+    }, 3000);
   }
 </script>
 
