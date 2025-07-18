@@ -56,16 +56,16 @@ def detect_faces_mtcnn(frame):
         x2 = min(w, x + width)
         y2 = min(h, y + height)
 
-        # tighten box by small margin (optional tweak)
+       
         margin = 10
         top = max(y + margin, 0)
         bottom = min(y2 - margin, h)
         left = max(x + margin, 0)
         right = min(x2 - margin, w)
 
-        # Ensure valid box after margin adjustment
+        
         if bottom > top and right > left:
-            boxes.append((top, right, bottom, left))  # face_recognition format
+            boxes.append((top, right, bottom, left))  
     return boxes
 
 
@@ -361,12 +361,11 @@ def mark_attendance():
                 recent_faces[employee_name] = now_epoch
                 results.append(action)
 
-                # ✅ Show green box
+               
                 cv2.rectangle(annotated_img, (left, top), (right, bottom), (0, 255, 0), 2)
                 cv2.putText(annotated_img, employee_name, (left, top - 10),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
         else:
-            # ❌ Unknown face — show red box
             cv2.rectangle(annotated_img, (left, top), (right, bottom), (0, 0, 255), 2)
             cv2.putText(annotated_img, "Unknown", (left, top - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)

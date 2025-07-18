@@ -232,14 +232,15 @@
       messageBox.innerHTML = `<div class='alert alert-danger'>Error: ${err.message}</div>`;
     });
   }
-
   function startAutoCapture() {
-   
-    captureAndSend();
-    setInterval(() => {
-      captureAndSend();
-    }, 3000);
+    const runCapture = () => {
+      captureAndSend().then(() => {
+       
+      });
+    };
+    runCapture(); 
   }
+
 </script>
 
 
